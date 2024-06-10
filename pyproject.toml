@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wdtagger"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 authors = ["Jianqi Pan <jannchie@gmail.com>"]
 readme = "README.md"
