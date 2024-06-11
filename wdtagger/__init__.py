@@ -177,6 +177,8 @@ class Tagger:
             model_repo (str): Repository name on HuggingFace.
             cache_dir (str, optional): Directory to cache the model. Defaults to None.
             hf_token (str, optional): HuggingFace token for authentication. Defaults to HF_TOKEN.
+            loglevel (int, optional): Logging level. Defaults to logging.INFO.
+            num_threads (int, optional): Number of threads for ONNX runtime. Defaults to None.
         """
         self.logger = logging.getLogger("wdtagger")
         self.logger.setLevel(loglevel)
@@ -195,6 +197,7 @@ class Tagger:
             model_repo (str): Repository name on HuggingFace.
             cache_dir (str, optional): Directory to cache the model. Defaults to None.
             hf_token (str, optional): HuggingFace token for authentication. Defaults to None.
+            num_threads (int, optional): Number of threads for ONNX runtime. Defaults to None.
         """
         with console.status("Loading model..."):
             csv_path = huggingface_hub.hf_hub_download(
