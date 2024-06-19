@@ -1,5 +1,7 @@
 # wdtagger
 
+[![CodeTime Badge](https://img.shields.io/endpoint?style=social&color=222&url=https%3A%2F%2Fapi.codetime.dev%2Fshield%3Fid%3D2%26project%3Dwdtagger%26in=0)](https://codetime.dev)
+
 `wdtagger` is a simple and easy-to-use wrapper for the tagger model created by [SmilingWolf](https://github.com/SmilingWolf) which is specifically designed for tagging anime illustrations.
 
 ## Installation
