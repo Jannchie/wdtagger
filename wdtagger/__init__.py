@@ -22,6 +22,10 @@ HF_TOKEN = os.environ.get(
 MODEL_FILENAME = "model.onnx"  # ONNX model filename
 LABEL_FILENAME = "selected_tags.csv"  # Labels CSV filename
 
+available_providers = rt.get_available_providers()
+supported_providers = ["CPUExecutionProvider", "CUDAExecutionProvider"]
+providers = list(set(available_providers) & set(supported_providers))
+
 
 def load_labels(dataframe) -> list[str]:
     """Load labels from a dataframe and process tag names.
@@ -220,7 +224,11 @@ class Tagger:
             if num_threads:
                 options.intra_op_num_threads = num_threads
                 options.inter_op_num_threads = num_threads
-            model = rt.InferenceSession(model_path, options)
+            model = rt.InferenceSession(
+                model_path,
+                options,
+                providers=providers,
+            )
             _, height, _, _ = model.get_inputs()[0].shape
             self.model_target_size = height
             self.model = model
