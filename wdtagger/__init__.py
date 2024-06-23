@@ -2,7 +2,8 @@ import logging
 import os
 import time
 from collections import OrderedDict
-from typing import Any, Sequence
+from pathlib import Path
+from typing import Any, List, Sequence, Union
 
 import huggingface_hub
 import numpy as np
@@ -19,6 +20,19 @@ console = rich.get_console()
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 MODEL_FILENAME = "model.onnx"
 LABEL_FILENAME = "selected_tags.csv"
+
+Input = Union[np.ndarray, Image.Image, str, Path]
+
+
+def to_pil(img: Input) -> Image.Image:
+    if isinstance(img, (str, Path)):
+        return Image.open(img)
+    elif isinstance(img, np.ndarray):
+        return Image.fromarray(img)
+    elif isinstance(img, Image.Image):
+        return img
+    else:
+        raise ValueError("Invalid input type.")
 
 
 def load_labels(dataframe) -> list[str]:
@@ -241,7 +255,7 @@ class Tagger:
             self.model_target_size = height
             self.model = model
 
-    def prepare_image(self, image):
+    def pil_to_cv2_numpy(self, image):
         """Prepare the image for model input.
 
         Args:
@@ -278,14 +292,14 @@ class Tagger:
 
     def tag(
         self,
-        image: Image.Image | list[Image.Image],
+        image: Union[Input, List[Input]],
         general_threshold=0.35,
         character_threshold=0.9,
     ) -> Result | list[Result]:
         """Tag the image and return the results.
 
         Args:
-            image (PIL.Image | list[PIL.Image]): Input image or list of images.
+            image (Union[Input, List[Input]]): Input image or list of images to tag.
             general_threshold (float): Threshold for general tags.
             character_threshold (float): Threshold for character tags.
 
@@ -293,8 +307,10 @@ class Tagger:
             Result | list[Result]: Tagging results.
         """
         started_at = time.time()
-        images = [image] if isinstance(image, Image.Image) else image
-        images = [self.prepare_image(img) for img in images]
+        input_is_list = isinstance(image, list)
+        images = image if isinstance(image, list) else [image]
+        images = [to_pil(img) for img in images]
+        images = [self.pil_to_cv2_numpy(img) for img in images]
         image_array = np.asarray(images, dtype=np.float32)
         input_name = self.model.get_inputs()[0].name
         label_name = self.model.get_outputs()[0].name
@@ -308,6 +324,8 @@ class Tagger:
         self.logger.info(
             f"Tagging {image_length} image{ 's' if image_length > 1 else ''} took {duration:.2f} seconds."
         )
+        if input_is_list:
+            return results
         return results[0] if len(results) == 1 else results
 
 
