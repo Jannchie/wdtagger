@@ -162,6 +162,15 @@ class Result:
         string = [x[0] for x in string]
         return ", ".join(string)
 
+    @property
+    def all_tags(self) -> list[str]:
+        """Return all tags as a list."""
+        return [self.rating] + list(self.general_tags) + list(self.character_tags)
+
+    @property
+    def all_tags_string(self) -> str:
+        return ", ".join(self.all_tags)
+
     def __str__(self) -> str:
         """Return a formatted string representation of the tags and their ratings."""
 
