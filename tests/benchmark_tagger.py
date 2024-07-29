@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import pytest
 from PIL import Image
@@ -11,7 +12,7 @@ image_paths = [os.path.join(image_dir, image) for image in os.listdir(image_dir)
 images = [Image.open(image_path) for image_path in image_paths]
 
 
-def tag_in_batch(images, batch=1):
+def tag_in_batch(images: Any, batch: Any = 1) -> None:
     for i in range(0, len(images), batch):
         tagger.tag(images[i : i + batch])
 
@@ -23,7 +24,7 @@ def tag_in_batch(images, batch=1):
     disable_gc=True,
 )
 @pytest.mark.parametrize("batch", [1, 2, 4, 8, 16])
-def test_tagger_benchmark(benchmark, batch):
+def test_tagger_benchmark(benchmark: Any, batch: Any) -> None:
     # warmup
     tag_in_batch(images[:1])
     benchmark.pedantic(tag_in_batch, args=(images, batch), iterations=1, rounds=10)

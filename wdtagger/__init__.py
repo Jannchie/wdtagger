@@ -30,7 +30,7 @@ def to_pil(img: Input) -> Image.Image:
         raise ValueError("Invalid input type.")
 
 
-def load_labels(dataframe) -> list[str]:
+def load_labels(dataframe) -> tuple[Any, list[Any], list[Any], list[Any]]:
     """Load labels from a dataframe and process tag names.
 
     Args:
@@ -64,9 +64,7 @@ def load_labels(dataframe) -> list[str]:
         "|_|",
         "||_||",
     ]
-    name_series = name_series.map(
-        lambda x: x.replace("_", " ") if x not in kaomojis else x
-    )
+    name_series = name_series.map(lambda x: x.replace("_", " ") if x not in kaomojis else x)
     tag_names = name_series.tolist()
     rating_indexes = list(np.where(dataframe["category"] == 9)[0])
     general_indexes = list(np.where(dataframe["category"] == 0)[0])
@@ -100,9 +98,7 @@ class Result:
         # Ratings
         ratings_names = [labels[i] for i in rating_indexes]
         rating_data = dict(ratings_names)
-        rating_data = OrderedDict(
-            sorted(rating_data.items(), key=lambda x: x[1], reverse=True)
-        )
+        rating_data = OrderedDict(sorted(rating_data.items(), key=lambda x: x[1], reverse=True))
 
         # General tags
         general_names = [labels[i] for i in general_indexes]
@@ -112,9 +108,7 @@ class Result:
         # Character tags
         character_names = [labels[i] for i in character_indexes]
         character_tag = [x for x in character_names if x[1] > character_threshold]
-        character_tag = OrderedDict(
-            sorted(character_tag, key=lambda x: x[1], reverse=True)
-        )
+        character_tag = OrderedDict(sorted(character_tag, key=lambda x: x[1], reverse=True))
 
         self.general_tag_data = general_tag
         self.character_tag_data = character_tag
@@ -188,6 +182,7 @@ class Tagger:
         num_threads=None,
         providers=None,
         console=None,
+        slient=False,
     ):
         """Initialize the Tagger object with the model repository and tokens.
 
@@ -200,19 +195,20 @@ class Tagger:
             providers (list, optional): List of providers for ONNX runtime. Defaults to None.
             console (rich.console.Console, optional): Rich console object. Defaults to None.
         """
-
-        if not console:
-            from rich import get_console
-
-            self.console = get_console()
-        else:
-            self.console = console
+        self.slient = slient
 
         if providers is None:
             providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
-        self.logger = logging.getLogger("wdtagger")
-        self.logger.setLevel(loglevel)
-        self.logger.addHandler(RichHandler())
+        if not slient:
+            if not console:
+                from rich import get_console
+
+                self.console = get_console()
+            else:
+                self.console = console
+            self.logger = logging.getLogger("wdtagger")
+            self.logger.setLevel(loglevel)
+            self.logger.addHandler(RichHandler())
         self.model_target_size = None
         self.cache_dir = cache_dir
         self.hf_token = hf_token
@@ -229,8 +225,8 @@ class Tagger:
         model_repo,
         cache_dir=None,
         hf_token=None,
-        num_threads: int = None,
-        providers: Sequence[str | tuple[str, dict[Any, Any]]] = None,
+        num_threads: int | None = None,
+        providers: Sequence[str | tuple[str, dict[Any, Any]]] | None = None,
     ):
         """Load the model and tags from the specified repository.
 
@@ -240,35 +236,41 @@ class Tagger:
             hf_token (str, optional): HuggingFace token for authentication. Defaults to None.
             num_threads (int, optional): Number of threads for ONNX runtime. Defaults to None.
         """
-        with self.console.status("Loading model..."):
-            csv_path = huggingface_hub.hf_hub_download(
-                model_repo,
-                LABEL_FILENAME,
-                cache_dir=cache_dir,
-                use_auth_token=hf_token,
-            )
+        if not self.slient:
+            with self.console.status("Loading model..."):
+                self.do_load_model(model_repo, cache_dir, hf_token, num_threads, providers)
+        else:
+            self.do_load_model(model_repo, cache_dir, hf_token, num_threads, providers)
 
-            model_path = huggingface_hub.hf_hub_download(
-                model_repo,
-                MODEL_FILENAME,
-                cache_dir=cache_dir,
-                use_auth_token=hf_token,
-            )
+    def do_load_model(self, model_repo, cache_dir, hf_token, num_threads, providers):
+        csv_path = huggingface_hub.hf_hub_download(
+            model_repo,
+            LABEL_FILENAME,
+            cache_dir=cache_dir,
+            use_auth_token=hf_token,
+        )
 
-            tags_df = pd.read_csv(csv_path)
-            self.sep_tags = load_labels(tags_df)
-            options = rt.SessionOptions()
-            if num_threads:
-                options.intra_op_num_threads = num_threads
-                options.inter_op_num_threads = num_threads
-            model = rt.InferenceSession(
-                model_path,
-                options,
-                providers=providers,
-            )
-            _, height, _, _ = model.get_inputs()[0].shape
-            self.model_target_size = height
-            self.model = model
+        model_path = huggingface_hub.hf_hub_download(
+            model_repo,
+            MODEL_FILENAME,
+            cache_dir=cache_dir,
+            use_auth_token=hf_token,
+        )
+
+        tags_df = pd.read_csv(csv_path)
+        self.sep_tags = load_labels(tags_df)
+        options = rt.SessionOptions()
+        if num_threads:
+            options.intra_op_num_threads = num_threads
+            options.inter_op_num_threads = num_threads
+        model = rt.InferenceSession(
+            model_path,
+            options,
+            providers=providers,
+        )
+        _, height, _, _ = model.get_inputs()[0].shape
+        self.model_target_size = height
+        self.model = model
 
     def pil_to_cv2_numpy(self, image):
         """Prepare the image for model input.
@@ -330,15 +332,13 @@ class Tagger:
         input_name = self.model.get_inputs()[0].name
         label_name = self.model.get_outputs()[0].name
         preds = self.model.run([label_name], {input_name: image_array})[0]
-        results = [
-            Result(pred, self.sep_tags, general_threshold, character_threshold)
-            for pred in preds
-        ]
+        results = [Result(pred, self.sep_tags, general_threshold, character_threshold) for pred in preds]
         duration = time.time() - started_at
         image_length = len(images)
-        self.logger.info(
-            f"Tagging {image_length} image{ 's' if image_length > 1 else ''} took {duration:.2f} seconds."
-        )
+        if not self.slient:
+            self.logger.info(
+                f"Tagging {image_length} image{ 's' if image_length > 1 else ''} took {duration:.2f} seconds."
+            )
         if input_is_list:
             return results
         return results[0] if len(results) == 1 else results
