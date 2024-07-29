@@ -31,9 +31,6 @@ line-length = 120
 [tool.mypy]
 ignore_missing_imports = true
 
-[tool.poetry.package.include]
-"stubs/**/*.pyi" = {}
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
