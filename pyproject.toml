@@ -1,6 +1,6 @@
 [project]
 name = "wdtagger"
-version = "0.13.1"
+version = "0.13.2"
 description = "A simple and easy-to-use wrapper for the tagger model created by [SmilingWolf](https://github.com/SmilingWolf) which is specifically designed for tagging anime illustrations."
 authors = [{ name = "Jianqi Pan", email = "jannchie@gmail.com" }]
 readme = "README.md"
