@@ -22,13 +22,6 @@ if TYPE_CHECKING:
 
 
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
-LABEL_FILENAME = "selected_tags.csv"
-
-MODEL_REPO_MAP = {
-    "vit": "SmilingWolf/wd-vit-tagger-v3",
-    "swinv2": "SmilingWolf/wd-swinv2-tagger-v3",
-    "convnext": "SmilingWolf/wd-convnext-tagger-v3",
-}
 
 
 Input = np.ndarray | Image.Image | str | Path | ImageFile
@@ -43,8 +36,9 @@ class LabelData:
 
 
 def load_labels() -> LabelData:
-    with importlib.resources.path("wdtagger.assets", "selected_tags.csv") as tags_path:
-        df: pd.DataFrame = pd.read_csv(tags_path, usecols=["name", "category"])
+    file = importlib.resources.as_file(importlib.resources.files("wdtagger.assets").joinpath("selected_tags.csv"))
+    with file as f:
+        df: pd.DataFrame = pd.read_csv(f, usecols=["name", "category"])
     rating_catagory_idx = 9
     general_catagory_idx = 0
     character_catagory_idx = 4
@@ -273,8 +267,7 @@ class Tagger:
             Result | list[Result]: Tagging results.
         """
         started_at = time.time()
-        input_is_list = isinstance(image, list)
-        images = list(image) if isinstance(image, Sequence) else [image]
+        images = list(image) if isinstance(image, Sequence) and not isinstance(image, str) else [image]
         images = [to_pil(img) for img in images]
         images = [pil_ensure_rgb(img) for img in images]
         images = [pil_pad_square(img) for img in images]
@@ -314,7 +307,7 @@ class Tagger:
             "s" if image_length > 1 else "",
             duration,
         )
-        if input_is_list:
+        if isinstance(image, Sequence) and not isinstance(image, str):
             return results
         return results[0] if len(results) == 1 else results
 
