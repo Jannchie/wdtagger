@@ -39,18 +39,29 @@ ignore = [
 [tool.pyright]
 
 [tool.uv]
-conflicts = [[{ extra = "cpu" }, { extra = "gpu" }]]
+conflicts = [
+    [
+        { extra = "cpu" },
+        { extra = "gpu" },
+        { extra = "cuda11" },
+        { extra = "cuda12" },
+    ],
+]
 package = true
 
 [tool.uv.sources]
 torch = [
     { index = "torch-cpu", extra = "cpu" },
     { index = "torch-gpu", extra = "gpu" },
+    { index = "torch-cuda11", extra = "cuda11" },
+    { index = "torch-cuda12", extra = "cuda12" },
 ]
 
 torchvision = [
     { index = "torch-cpu", extra = "cpu" },
     { index = "torch-gpu", extra = "gpu" },
+    { index = "torch-cuda11", extra = "cuda11" },
+    { index = "torch-cuda12", extra = "cuda12" },
 ]
 
 [[tool.uv.index]]
@@ -60,6 +71,16 @@ explicit = true
 
 [[tool.uv.index]]
 name = "torch-gpu"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[[tool.uv.index]]
+name = "torch-cuda11"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[[tool.uv.index]]
+name = "torch-cuda12"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
