@@ -5,12 +5,7 @@ description = "A simple and easy-to-use wrapper for the tagger model created by 
 authors = [{ name = "Jianqi Pan", email = "jannchie@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
-    "huggingface-hub>=0.26.2",
-    "numpy<2",
-    "pandas>=2.2.3",
-    "pillow>=11.0.0",
-]
+dependencies = ["huggingface-hub>=0.26.2", "pandas>=2.2.3", "pillow>=11.0.0"]
 
 [dependency-groups]
 dev = ["pytest>=8.3.3", "pytest-benchmark>=5.1.0", "ruff>=0.8.0"]
