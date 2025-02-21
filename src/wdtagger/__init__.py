@@ -1,3 +1,4 @@
+import importlib.resources
 import logging
 import os
 import time
@@ -10,8 +11,6 @@ import numpy as np
 import pandas as pd
 import timm
 import torch
-from huggingface_hub import hf_hub_download
-from huggingface_hub.utils import HfHubHTTPError
 from PIL import Image
 from PIL.ImageFile import ImageFile
 from timm.data import create_transform, resolve_data_config
@@ -20,6 +19,7 @@ from torch.nn import functional as F
 
 if TYPE_CHECKING:
     from torchvision.transforms import Compose
+
 
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 LABEL_FILENAME = "selected_tags.csv"
@@ -42,24 +42,9 @@ class LabelData:
     character: list[np.int64]
 
 
-def load_labels_hf(
-    repo_id: str,
-    revision: str | None = None,
-    token: str | None = None,
-) -> LabelData:
-    try:
-        csv_path = hf_hub_download(
-            repo_id=repo_id,
-            filename="selected_tags.csv",
-            revision=revision,
-            token=token,
-        )
-        csv_path = Path(csv_path).resolve()
-    except HfHubHTTPError as e:
-        msg = f"selected_tags.csv failed to download from {repo_id}"
-        raise FileNotFoundError(msg) from e
-
-    df: pd.DataFrame = pd.read_csv(csv_path, usecols=["name", "category"])
+def load_labels() -> LabelData:
+    with importlib.resources.path("wdtagger.assets", "selected_tags.csv") as tags_path:
+        df: pd.DataFrame = pd.read_csv(tags_path, usecols=["name", "category"])
     rating_catagory_idx = 9
     general_catagory_idx = 0
     character_catagory_idx = 4
@@ -249,7 +234,7 @@ class Tagger:
         state_dict = timm.models.load_state_dict_from_hf(model_repo)
         model.load_state_dict(state_dict)
 
-        self.labels: LabelData = load_labels_hf(repo_id=model_repo)
+        self.labels: LabelData = load_labels()
 
         self.transform: Compose = create_transform(**resolve_data_config(model.pretrained_cfg, model=model))  # type: ignore
 
