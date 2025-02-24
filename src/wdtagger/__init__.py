@@ -125,7 +125,7 @@ class Result:
         """Return general tags as a tuple."""
 
         return tuple(
-            d.replace("_", " ").replace("(", R"\(").replace(")", R"\)")
+            d.replace("_", " ")
             for d in sorted(
                 self.general_tag_data,
                 key=lambda k: self.general_tag_data[k],
@@ -137,7 +137,7 @@ class Result:
     def character_tags(self) -> tuple[str, ...]:
         """Return character tags as a tuple."""
         return tuple(
-            d.replace("_", " ").replace("(", R"\(").replace(")", R"\)")
+            d.replace("_", " ")
             for d in sorted(
                 self.character_tag_data,
                 key=lambda k: self.character_tag_data[k],
