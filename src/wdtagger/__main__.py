@@ -20,7 +20,6 @@ def main() -> None:
     for i, result in enumerate(results):
         print(f"Image {args.images[i]}:")  # noqa: T201
         print(result)  # noqa: T201
-        print()  # noqa: T201
 
 
 if __name__ == "__main__":

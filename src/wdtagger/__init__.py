@@ -90,7 +90,7 @@ def get_tags(
     char_threshold: float,
 ) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
     # Convert indices+probs to labels
-    probs_list = list(zip(labels.names, probs.numpy(), strict=False))
+    probs_list = list(zip(labels.names, probs.tolist(), strict=False))
 
     # First 4 labels are actually ratings
     rating_labels = dict([probs_list[i] for i in labels.rating])
