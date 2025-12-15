@@ -198,28 +198,32 @@ class Tagger:
         self,
         model_repo: str = "SmilingWolf/wd-swinv2-tagger-v3",
         hf_token: str = HF_TOKEN,
+        cache_dir: str | Path | None = None,
     ) -> None:
         """Initialize the Tagger object with the model repository and tokens."""
         self.logger = logging.getLogger("wdtagger")
         self.model_target_size = None
         self.hf_token = hf_token
+        self.cache_dir = Path(cache_dir).expanduser() if cache_dir else None
         self.torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self._load_model(model_repo)
+        self._load_model(model_repo, self.cache_dir)
 
     def _load_model(
         self,
         model_repo: str,
+        cache_dir: Path | None,
     ) -> None:
         """Load the model and tags from the specified repository.
 
         Args:
             model_repo (str): Repository name on HuggingFace.
-            cache_dir (str, optional): Directory to cache the model. Defaults to None.
-            hf_token (str, optional): HuggingFace token for authentication. Defaults to None.
-            num_threads (int, optional): Number of threads for ONNX runtime. Defaults to None.
+            cache_dir (Path | None): Directory to cache the model. Defaults to None.
         """
         start_time = time.time()
-        self.logger.info("Loading model from %s", model_repo)
+        if cache_dir:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            os.environ["HUGGINGFACE_HUB_CACHE"] = str(cache_dir)
+        self.logger.debug("Loading model from %s", model_repo)
         self._do_load_model(model_repo)
         self.logger.info("Model loaded successfully in %.2fs", time.time() - start_time)
 
@@ -301,7 +305,7 @@ class Tagger:
 
         duration = time.time() - started_at
         image_length = len(images)
-        self.logger.info(
+        self.logger.debug(
             "Tagged %d image%s in %.2fs",
             image_length,
             "s" if image_length > 1 else "",
